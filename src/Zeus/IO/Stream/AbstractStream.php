@@ -54,6 +54,23 @@ class AbstractStream extends AbstractPhpResource implements StreamInterface
     private $isBlocking = true;
 
     /**
+     * @param string $path
+     * @param mixed $mode File mode ("r", "r+", "w", "w+", etc - as documented on php.net)
+     * @return static
+     */
+    public static function open(string $path, $mode)
+    {
+        $resource = @fopen($path, $mode);
+
+        if (false === $resource) {
+            $error = error_get_last();
+            throw new IOException($error["message"], $error['type']);
+        }
+
+        return new static($resource);
+    }
+
+    /**
      * SocketConnection constructor.
      * @param resource $resource
      * @param string $peerName

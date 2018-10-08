@@ -1,6 +1,6 @@
 {
   "name": "zeus-server/zeus-io",
-  "description": "A a collection of PHP programming language APIs that offer features for intensive I/O operations.",
+  "description": "A collection of PHP programming language APIs that offer features for intensive I/O operations.",
   "type": "library",
   "license": "LGPL-2.1-only",
   "authors": [
