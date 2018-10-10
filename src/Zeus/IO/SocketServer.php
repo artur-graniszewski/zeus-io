@@ -49,7 +49,7 @@ class SocketServer implements SocketServerInterface
     private $soTimeout = 0;
 
     /** @var bool */
-    private $tcpNoDelay;
+    private $tcpNoDelay = false;
 
     /** @var SelectableStreamInterface */
     private $socketObject;
@@ -79,6 +79,15 @@ class SocketServer implements SocketServerInterface
         if (defined("HHVM_VERSION")) {
             throw new UnsupportedOperationException("Reuse address feature is not supported by HHVM");
         }
+        
+        if ($this->isBound()) {
+            throw new SocketException("Socket already bound");
+        }
+        
+        if ($this->isClosed()) {
+            throw new SocketException("Server already stopped");
+        }
+        
         $this->reuseAddress = $reuse;
 
         return $this;
@@ -89,9 +98,6 @@ class SocketServer implements SocketServerInterface
         return $this->reuseAddress;
     }
 
-    /**
-     * @return bool
-     */
     public function getTcpNoDelay(): bool
     {
         return $this->tcpNoDelay;
@@ -99,6 +105,14 @@ class SocketServer implements SocketServerInterface
 
     public function setTcpNoDelay(bool $tcpNoDelay)
     {
+        if ($this->isBound()) {
+            throw new SocketException("Socket already bound");
+        }
+        
+        if ($this->isClosed()) {
+            throw new SocketException("Server already stopped");
+        }
+        
         $this->tcpNoDelay = $tcpNoDelay;
     }
 
@@ -195,8 +209,12 @@ class SocketServer implements SocketServerInterface
      */
     public function setOption(int $option, $value)
     {
-        if (!$this->resource) {
+        if (!$this->isBound()) {
             throw new SocketException("Socket must be bound first");
+        }
+        
+        if ($this->isClosed()) {
+            throw new SocketException("Server already stopped");
         }
 
         $this->getSocket()->setOption($option, $value);
@@ -204,13 +222,22 @@ class SocketServer implements SocketServerInterface
 
     public function close()
     {
-        if ($this->getSocket()->isClosed()) {
+        if (!$this->isBound()) {
+            throw new SocketException("Socket must be bound first");
+        }
+        
+        if ($this->isClosed()) {
             throw new SocketException("Server already stopped");
         }
 
         $this->getSocket()->close();
         $this->resource = null;
         $this->isClosed = true;
+    }
+    
+    public function isClosed() : bool
+    {
+        return $this->isClosed || ($this->socketObject && $this->getSocket()->isClosed());
     }
 
     public function isBound() : bool
@@ -228,16 +255,6 @@ class SocketServer implements SocketServerInterface
         return $this->host . ($this->port ? ':' . $this->port : '');
     }
 
-    public function isClosed() : bool
-    {
-        return !$this->socketObject || $this->getSocket()->isClosed();
-    }
-
-    public function isIsBound() : bool
-    {
-        return $this->isBound;
-    }
-
     public function getSoTimeout() : int
     {
         return $this->soTimeout;
@@ -245,6 +262,14 @@ class SocketServer implements SocketServerInterface
 
     public function setSoTimeout(int $soTimeout)
     {
+        if (!$this->isBound()) {
+            throw new SocketException("Socket is already bound");
+        }
+        
+        if ($this->getSocket()->isClosed()) {
+            throw new SocketException("Server already stopped");
+        }
+        
         $this->soTimeout = $soTimeout;
     }
 

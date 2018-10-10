@@ -23,7 +23,9 @@ class SocketStreamTest extends AbstractIOTest
 
     public function tearDown()
     {
-        $this->server->close();
+        if (!$this->server->isClosed()) {
+            $this->server->close();
+        }
 
         if (is_resource($this->client)) {
             fclose($this->client);
@@ -317,5 +319,89 @@ class SocketStreamTest extends AbstractIOTest
         $this->assertGreaterThan(0, strlen($received), 'Buffer should be flushed when full');
 
         fclose($this->client);
+    }
+    
+    /**
+     * @expectedException \Zeus\IO\Exception\SocketException
+     * @expectedExceptionMessage Server already bound
+     */
+    public function testDoubleBind()
+    {
+        $this->server->bind('tcp://localhost', 1000, 1000);
+    }
+    
+    /**
+     * @expectedException \Zeus\IO\Exception\SocketException
+     * @expectedExceptionMessage Server already stopped
+     */
+    public function testDoubleCloseOnServer()
+    {
+        $this->server->close();
+        $this->server->close();
+    }
+    
+    /**
+     * @runInSeparateProcess true
+     * @expectedException \Zeus\IO\Exception\UnsupportedOperationException
+     * @expectedExceptionMessage Reuse address feature is not supported by HHVM
+     */
+    public function testReuseAddressInHHVM()
+    {
+        if (!defined("HHVM_VERSION")) {
+            define("HHVM_VERSION", "any");
+        }
+        
+        $server = new SocketServer();
+        $server->setReuseAddress(true);
+    }
+    
+    public function testReuseAddressInPHP()
+    {
+        if (defined("HHVM_VERSION")) {
+            $this->markTestSkipped("Not supported in HHVM");
+        }
+        
+        $server = new SocketServer();
+        $this->assertEquals(false, $server->getReuseAddress());
+        $server->setReuseAddress(true);
+        $this->assertEquals(true, $server->getReuseAddress());
+    }
+
+    public function testSetTcpNoDelay()
+    {
+        $server = new SocketServer();
+        $this->assertEquals(false, $server->getTcpNoDelay());
+        $server->setTcpNoDelay(true);
+        $this->assertEquals(true, $server->getTcpNoDelay());
+    }
+    
+    /**
+     * @expectedException \Zeus\IO\Exception\SocketException
+     * @expectedExceptionMessage Socket already bound
+     */
+    public function testSetTcpNoDelayOnBoundServer()
+    {
+        $server = $this->server;
+        $this->assertEquals(false, $server->getTcpNoDelay());
+        $server->setTcpNoDelay(true);
+    }
+    
+    public function testEphemeralPortInServerConstructor()
+    {
+        $server = new SocketServer(0, 100, 'tcp://127.0.0.1');
+        $port = $server->getLocalPort();
+        $server->close();
+        
+        $this->assertGreaterThan(0, $port);
+    }
+    
+    public function testEphemeralPortInServerBind()
+    {
+        $server = new SocketServer();
+        $server->bind('tcp://127.0.0.1', 10, 0);
+        $port = $server->getLocalPort();
+        $server->close();
+        
+        $this->assertGreaterThan(0, $port);
     }
 }

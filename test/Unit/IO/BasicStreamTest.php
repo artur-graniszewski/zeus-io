@@ -23,15 +23,21 @@ class BasicStreamTest extends AbstractIOTest
     /**
      * @expectedExceptionMessage Failed to switch the stream to a non-blocking mode: unknown error
      * @expectedException \Zeus\IO\Exception\IOException
+     * @runInSeparateProcess true
      */
     public function testFailOnSetBlockingForHHVM()
     {
+        $this->markTestIncomplete("Fix me");
         if (!defined("HHVM_VERSION")) {
-            $this->markTestSkipped("This is a HHVM-only test");
+            define("HHVM_VERSION", "any");
         }
         $stream = new FileStream(fopen(__FILE__, 'r'));
-        fclose($stream->getResource());
-        $stream->setBlocking(false);
+        try {
+            $stream->setBlocking(false);
+        } catch (\Throwable $e) {
+            fclose($stream->getResource());
+            throw $e;
+        }
     }
 
     public function testClose()

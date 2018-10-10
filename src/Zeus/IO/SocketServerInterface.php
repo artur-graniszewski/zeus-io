@@ -47,8 +47,6 @@ interface SocketServerInterface
 
     public function isClosed() : bool;
 
-    public function isIsBound() : bool;
-
     public function getSoTimeout() : int;
 
     public function setSoTimeout(int $soTimeout);
