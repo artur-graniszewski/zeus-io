@@ -62,13 +62,13 @@ class SocketStreamTest extends AbstractIOTest
 
     public function testConnectionDetails()
     {
-        $this->client = stream_socket_client('tcp://127.0.0.2:' . $this->port);
+        $this->client = stream_socket_client('tcp://localhost:' . $this->port);
         stream_set_blocking($this->client, false);
         $connection = $this->server->accept();
         $this->assertInstanceOf(SocketStream::class, $connection);
 
         $this->assertEquals(stream_socket_get_name($this->client, false), $connection->getRemoteAddress(), 'Remote address is incorrect');
-        $this->assertEquals('127.0.0.2:' . $this->port, $connection->getLocalAddress(), 'Server address is incorrect');
+        $this->assertEquals('127.0.0.1:' . $this->port, $connection->getLocalAddress(), 'Server address is incorrect');
         fclose($this->client);
     }
 
@@ -94,7 +94,7 @@ class SocketStreamTest extends AbstractIOTest
      */
     public function testDoubleClose()
     {
-        $this->client = stream_socket_client('tcp://127.0.0.2:' . $this->port);
+        $this->client = stream_socket_client('tcp://localhost:' . $this->port);
         stream_set_blocking($this->client, false);
         $connection = $this->server->accept();
         $connection->close();
@@ -103,7 +103,7 @@ class SocketStreamTest extends AbstractIOTest
 
     public function testIsReadable()
     {
-        $this->client = stream_socket_client('tcp://127.0.0.2:' . $this->port);
+        $this->client = stream_socket_client('tcp://localhost:' . $this->port);
         stream_set_blocking($this->client, false);
         $connection = $this->server->accept();
         $this->assertTrue($connection->isReadable(), 'Connection should be readable');
@@ -117,7 +117,7 @@ class SocketStreamTest extends AbstractIOTest
      */
     public function testExceptionWhenReadingOnClosedConnection()
     {
-        $this->client = stream_socket_client('tcp://127.0.0.2:' . $this->port);
+        $this->client = stream_socket_client('tcp://localhost:' . $this->port);
         stream_set_blocking($this->client, false);
         $connection = $this->server->accept();
         $connection->close();
@@ -131,7 +131,7 @@ class SocketStreamTest extends AbstractIOTest
      */
     public function testWriteOnClosedConnection()
     {
-        $this->client = stream_socket_client('tcp://127.0.0.2:' . $this->port);
+        $this->client = stream_socket_client('tcp://localhost:' . $this->port);
         stream_set_blocking($this->client, false);
         $connection = $this->server->accept();
         $connection->close();
@@ -146,7 +146,7 @@ class SocketStreamTest extends AbstractIOTest
     public function testWriteToDisconnectedClient()
     {
         //$this->markTestIncomplete("Check why PHP fwrite-like functions report that entire string was written on a broken connection");
-        $this->client = stream_socket_client('tcp://127.0.0.2:' . $this->port);
+        $this->client = stream_socket_client('tcp://localhost:' . $this->port);
         //stream_set_blocking($this->client, false);
         $connection = $this->server->accept();
         $this->assertTrue($connection->isReadable(), 'Connection should be readable');
@@ -388,7 +388,7 @@ class SocketStreamTest extends AbstractIOTest
     
     public function testEphemeralPortInServerConstructor()
     {
-        $server = new SocketServer(0, 100, 'tcp://127.0.0.1');
+        $server = new SocketServer(0, 100, 'tcp://localhost');
         $port = $server->getLocalPort();
         $server->close();
         
@@ -398,7 +398,7 @@ class SocketStreamTest extends AbstractIOTest
     public function testEphemeralPortInServerBind()
     {
         $server = new SocketServer();
-        $server->bind('tcp://127.0.0.1', 10, 0);
+        $server->bind('tcp://localhost', 10, 0);
         $port = $server->getLocalPort();
         $server->close();
         

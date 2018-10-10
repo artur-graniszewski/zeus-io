@@ -199,8 +199,27 @@ class SelectorTest extends AbstractIOTest
      * @expectedException \TypeError
      * @expectedExceptionMessage Argument 1 passed to Zeus\IO\Stream\Selector::register() must implement interface Zeus\IO\Stream\SelectableStreamInterface, instance of stdClass given
      */
-    public function testStreamArgumentValidation()
+    public function testStreamArgumentValidationInPHP()
     {
+        if (defined("HHVM_VERSION")) {
+            $this->markTestSkipped('This is a PHP version of the test');
+        }
+
+        $selector = new Selector();
+        $stream = new \stdClass();
+        $selector->register($stream, false);
+    }
+
+    /**
+     * @expectedException \TypeError
+     * @expectedExceptionMessage Argument 1 passed to Zeus\IO\Stream\Selector::register() must implement interface Zeus\IO\Stream\SelectableStreamInterface, stdClass given
+     */
+    public function testStreamArgumentValidationInHHVM()
+    {
+        if (!defined("HHVM_VERSION")) {
+            $this->markTestSkipped('This is a HHVM version of the test');
+        }
+
         $selector = new Selector();
         $stream = new \stdClass();
         $selector->register($stream, false);
